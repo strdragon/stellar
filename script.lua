@@ -1,5 +1,5 @@
 -- Stellar GUI Library for Roblox
--- Улучшенная версия с исправлениями и новыми функциями
+-- Исправленная версия с правильной работой системы ключей
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -24,36 +24,6 @@ local Themes = {
         Warning = Color3.fromRGB(200, 140, 0),
         Danger = Color3.fromRGB(200, 50, 50),
         Info = Color3.fromRGB(80, 180, 220)
-    },
-    Light = {
-        Primary = Color3.fromRGB(245, 245, 250),
-        Secondary = Color3.fromRGB(230, 230, 240),
-        Accent = Color3.fromRGB(0, 120, 215),
-        Text = Color3.fromRGB(30, 30, 40),
-        Success = Color3.fromRGB(0, 160, 80),
-        Warning = Color3.fromRGB(180, 120, 0),
-        Danger = Color3.fromRGB(180, 40, 40),
-        Info = Color3.fromRGB(60, 160, 200)
-    },
-    Purple = {
-        Primary = Color3.fromRGB(25, 20, 35),
-        Secondary = Color3.fromRGB(40, 30, 55),
-        Accent = Color3.fromRGB(140, 80, 255),
-        Text = Color3.fromRGB(240, 240, 240),
-        Success = Color3.fromRGB(100, 220, 140),
-        Warning = Color3.fromRGB(255, 180, 60),
-        Danger = Color3.fromRGB(255, 80, 100),
-        Info = Color3.fromRGB(160, 120, 255)
-    },
-    Red = {
-        Primary = Color3.fromRGB(30, 15, 15),
-        Secondary = Color3.fromRGB(50, 25, 25),
-        Accent = Color3.fromRGB(220, 60, 60),
-        Text = Color3.fromRGB(240, 240, 240),
-        Success = Color3.fromRGB(80, 200, 100),
-        Warning = Color3.fromRGB(255, 160, 40),
-        Danger = Color3.fromRGB(220, 60, 60),
-        Info = Color3.fromRGB(200, 100, 100)
     }
 }
 
@@ -146,13 +116,13 @@ function Stellar:CreateWindow(options)
         },
         KeySystem = options.KeySystem or false,
         KeySettings = options.KeySettings or {
-            Title = "Key System",
-            Subtitle = "Enter your key",
+            Title = "Premium Access",
+            Subtitle = "Enter your license key",
             Note = "Contact admin to get key",
             FileName = "Key",
             SaveKey = true,
             GrabKeyFromSite = false,
-            Key = {"default123"}
+            Key = {"PREMIUM2024", "STELLAR123", "VIPACCESS"}
         }
     }
     
@@ -162,12 +132,13 @@ function Stellar:CreateWindow(options)
     CurrentTheme = window.Theme
     Colors = Themes[CurrentTheme] or Themes.Dark
     
-    -- Проверка ключа если включена система
+    -- Если включена система ключей, показываем ее
     if window.KeySystem then
-        local keyVerified = self:VerifyKeySystem(window.KeySettings)
+        local keyVerified, keyGui = self:VerifyKeySystem(window.KeySettings)
         if not keyVerified then
             return nil
         end
+        -- Если ключ верный, keyGui будет уничтожен и продолжаем создание GUI
     end
     
     -- Загрузка конфигурации
@@ -175,10 +146,15 @@ function Stellar:CreateWindow(options)
         local loadedConfig = LoadConfiguration(window.ConfigurationSaving.FileName)
         if loadedConfig then
             Configurations = loadedConfig
-            print("Конфигурация загружена:", Configurations)
         end
     end
     
+    -- Создание основного GUI
+    return self:CreateMainGUI(window)
+end
+
+-- Создание основного интерфейса после проверки ключа
+function Stellar:CreateMainGUI(window)
     -- Создание GUI с защитой от удаления
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "StellarGUI"
@@ -414,7 +390,6 @@ function Stellar:VerifyKeySystem(keySettings)
         if savedKey then
             for _, validKey in ipairs(keySettings.Key) do
                 if savedKey == validKey then
-                    print("Ключ найден в сохранениях:", savedKey)
                     -- Сохраняем ключ в конфигурации
                     if self.ConfigurationSaving.Enabled then
                         Configurations["SavedKey"] = savedKey
@@ -433,25 +408,25 @@ function Stellar:VerifyKeySystem(keySettings)
     keyGui.Parent = player.PlayerGui
     
     local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(0, 400, 0, 300)
-    mainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+    mainFrame.Size = UDim2.new(0, 400, 0, 280)
+    mainFrame.Position = UDim2.new(0.5, -200, 0.5, -140)
     mainFrame.BackgroundColor3 = Colors.Primary
     mainFrame.BorderSizePixel = 0
     mainFrame.Parent = keyGui
     
     local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 60)
-    title.Position = UDim2.new(0, 0, 0, 20)
+    title.Size = UDim2.new(1, 0, 0, 50)
+    title.Position = UDim2.new(0, 0, 0, 10)
     title.BackgroundTransparency = 1
     title.Text = keySettings.Title
     title.TextColor3 = Colors.Accent
-    title.TextSize = 22
+    title.TextSize = 20
     title.Font = Enum.Font.GothamBold
     title.Parent = mainFrame
     
     local subtitle = Instance.new("TextLabel")
-    subtitle.Size = UDim2.new(1, 0, 0, 30)
-    subtitle.Position = UDim2.new(0, 0, 0, 70)
+    subtitle.Size = UDim2.new(1, 0, 0, 25)
+    subtitle.Position = UDim2.new(0, 0, 0, 60)
     subtitle.BackgroundTransparency = 1
     subtitle.Text = keySettings.Subtitle
     subtitle.TextColor3 = Colors.Text
@@ -459,24 +434,13 @@ function Stellar:VerifyKeySystem(keySettings)
     subtitle.Font = Enum.Font.Gotham
     subtitle.Parent = mainFrame
     
-    local note = Instance.new("TextLabel")
-    note.Size = UDim2.new(1, -40, 0, 40)
-    note.Position = UDim2.new(0, 20, 1, -100)
-    note.BackgroundTransparency = 1
-    note.Text = keySettings.Note
-    note.TextColor3 = Colors.Warning
-    note.TextSize = 12
-    note.Font = Enum.Font.Gotham
-    note.TextWrapped = true
-    note.Parent = mainFrame
-    
     local inputBox = Instance.new("TextBox")
     inputBox.Size = UDim2.new(1, -40, 0, 40)
-    inputBox.Position = UDim2.new(0, 20, 0, 120)
+    inputBox.Position = UDim2.new(0, 20, 0, 100)
     inputBox.BackgroundColor3 = Colors.Secondary
     inputBox.BorderSizePixel = 0
     inputBox.Text = ""
-    inputBox.PlaceholderText = "Enter key here..."
+    inputBox.PlaceholderText = "Введите ключ..."
     inputBox.TextColor3 = Colors.Text
     inputBox.TextSize = 14
     inputBox.Font = Enum.Font.Gotham
@@ -484,7 +448,7 @@ function Stellar:VerifyKeySystem(keySettings)
     
     local submitButton = Instance.new("TextButton")
     submitButton.Size = UDim2.new(1, -40, 0, 40)
-    submitButton.Position = UDim2.new(0, 20, 0, 180)
+    submitButton.Position = UDim2.new(0, 20, 0, 160)
     submitButton.BackgroundColor3 = Colors.Accent
     submitButton.BorderSizePixel = 0
     submitButton.Text = "ПРОВЕРИТЬ КЛЮЧ"
@@ -495,7 +459,7 @@ function Stellar:VerifyKeySystem(keySettings)
     
     local errorLabel = Instance.new("TextLabel")
     errorLabel.Size = UDim2.new(1, -40, 0, 20)
-    errorLabel.Position = UDim2.new(0, 20, 0, 230)
+    errorLabel.Position = UDim2.new(0, 20, 0, 210)
     errorLabel.BackgroundTransparency = 1
     errorLabel.Text = ""
     errorLabel.TextColor3 = Colors.Danger
@@ -503,28 +467,37 @@ function Stellar:VerifyKeySystem(keySettings)
     errorLabel.Font = Enum.Font.Gotham
     errorLabel.Parent = mainFrame
     
-    local validKey = false
+    local note = Instance.new("TextLabel")
+    note.Size = UDim2.new(1, -40, 0, 30)
+    note.Position = UDim2.new(0, 20, 1, -40)
+    note.BackgroundTransparency = 1
+    note.Text = keySettings.Note
+    note.TextColor3 = Colors.Warning
+    note.TextSize = 11
+    note.Font = Enum.Font.Gotham
+    note.TextWrapped = true
+    note.Parent = mainFrame
     
-    submitButton.MouseButton1Click:Connect(function()
+    local validKey = false
+    local connection
+    
+    local function cleanup()
+        if connection then
+            connection:Disconnect()
+        end
+        if keyGui then
+            keyGui:Destroy()
+        end
+    end
+    
+    connection = submitButton.MouseButton1Click:Connect(function()
         local enteredKey = inputBox.Text
         
         -- Проверка ключа
         for _, validKeyValue in ipairs(keySettings.Key) do
-            if keySettings.GrabKeyFromSite then
-                -- Загрузка ключа с сайта
-                local success, siteKey = pcall(function()
-                    return game:HttpGet(validKeyValue)
-                end)
-                
-                if success and enteredKey == siteKey then
-                    validKey = true
-                    break
-                end
-            else
-                if enteredKey == validKeyValue then
-                    validKey = true
-                    break
-                end
+            if enteredKey == validKeyValue then
+                validKey = true
+                break
             end
         end
         
@@ -537,19 +510,23 @@ function Stellar:VerifyKeySystem(keySettings)
                     SaveConfiguration(self.ConfigurationSaving.FileName, Configurations)
                 end
             end
-            keyGui:Destroy()
+            cleanup()
         else
             errorLabel.Text = "Неверный ключ! Попробуйте снова."
         end
     end)
     
-    -- Ожидание валидации
-    while keyGui.Parent do
-        if validKey then
-            break
+    -- Также проверяем при нажатии Enter
+    inputBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            submitButton.MouseButton1Click:Connect()
         end
-        wait()
-    end
+    end)
+    
+    -- Ожидание валидации
+    repeat 
+        wait() 
+    until not keyGui.Parent or validKey
     
     return validKey
 end
@@ -563,7 +540,7 @@ function Stellar:CreateSection(options)
     
     local sectionFrame = Instance.new("Frame")
     sectionFrame.Name = "SectionFrame"
-    sectionFrame.Size = UDim2.new(1, 0, 0, 35)
+    sectionFrame.Size = UDim2.new(1, 0, 0, 30)
     sectionFrame.BackgroundTransparency = 1
     sectionFrame.Parent = section.Parent
     
@@ -573,18 +550,10 @@ function Stellar:CreateSection(options)
     sectionLabel.BackgroundTransparency = 1
     sectionLabel.Text = "│ " .. string.upper(section.Name)
     sectionLabel.TextColor3 = Colors.Accent
-    sectionLabel.TextSize = 16
+    sectionLabel.TextSize = 14
     sectionLabel.Font = Enum.Font.GothamBold
     sectionLabel.TextXAlignment = Enum.TextXAlignment.Left
     sectionLabel.Parent = sectionFrame
-    
-    local underline = Instance.new("Frame")
-    underline.Name = "Underline"
-    underline.Size = UDim2.new(1, 0, 0, 1)
-    underline.Position = UDim2.new(0, 0, 1, -1)
-    underline.BackgroundColor3 = Colors.Secondary
-    underline.BorderSizePixel = 0
-    underline.Parent = sectionLabel
     
     return sectionFrame
 end
@@ -647,7 +616,6 @@ function Stellar:CreateToggle(options)
     -- Загрузка сохраненного состояния
     if toggle.Config and Configurations[toggle.Config] ~= nil then
         toggle.Default = Configurations[toggle.Config]
-        print("Загружено состояние для", toggle.Config, ":", toggle.Default)
     end
     
     local toggleFrame = Instance.new("Frame")
@@ -706,7 +674,6 @@ function Stellar:CreateToggle(options)
             Configurations[toggle.Config] = isToggled
             if self.ConfigurationSaving.Enabled then
                 SaveConfiguration(self.ConfigurationSaving.FileName, Configurations)
-                print("Сохранено состояние для", toggle.Config, ":", isToggled)
             end
         end
         
@@ -731,7 +698,6 @@ function Stellar:CreateSlider(options)
     -- Загрузка сохраненного значения
     if slider.Config and Configurations[slider.Config] ~= nil then
         slider.Default = Configurations[slider.Config]
-        print("Загружено значение для", slider.Config, ":", slider.Default)
     end
     
     local sliderFrame = Instance.new("Frame")
@@ -815,7 +781,6 @@ function Stellar:CreateSlider(options)
             Configurations[slider.Config] = value
             if self.ConfigurationSaving.Enabled then
                 SaveConfiguration(self.ConfigurationSaving.FileName, Configurations)
-                print("Сохранено значение для", slider.Config, ":", value)
             end
         end
         
@@ -855,122 +820,6 @@ function Stellar:CreateSlider(options)
     end)
     
     return sliderFrame
-end
-
--- Создание выпадающего списка
-function Stellar:CreateDropdown(options)
-    local dropdown = {
-        Name = options.Name or "Dropdown",
-        Options = options.Options or {"Option 1", "Option 2", "Option 3"},
-        Default = options.Default or options.Options[1],
-        Callback = options.Callback or function() end,
-        Parent = options.Parent or self.Container,
-        Config = options.Config or nil
-    }
-    
-    -- Загрузка сохраненного значения
-    if dropdown.Config and Configurations[dropdown.Config] ~= nil then
-        dropdown.Default = Configurations[dropdown.Config]
-        print("Загружено значение для", dropdown.Config, ":", dropdown.Default)
-    end
-    
-    local dropdownFrame = Instance.new("Frame")
-    dropdownFrame.Name = "DropdownFrame"
-    dropdownFrame.Size = UDim2.new(1, 0, 0, 35)
-    dropdownFrame.BackgroundTransparency = 1
-    dropdownFrame.ClipsDescendants = true
-    dropdownFrame.Parent = dropdown.Parent
-    
-    local dropdownButton = Instance.new("TextButton")
-    dropdownButton.Name = "DropdownButton"
-    dropdownButton.Size = UDim2.new(1, 0, 0, 35)
-    dropdownButton.BackgroundColor3 = Colors.Secondary
-    dropdownButton.BorderSizePixel = 0
-    dropdownButton.Text = dropdown.Name .. ": " .. tostring(dropdown.Default)
-    dropdownButton.TextColor3 = Colors.Text
-    dropdownButton.TextSize = 13
-    dropdownButton.Font = Enum.Font.Gotham
-    dropdownButton.TextWrapped = true
-    dropdownButton.Parent = dropdownFrame
-    
-    local arrow = Instance.new("ImageLabel")
-    arrow.Name = "Arrow"
-    arrow.Size = UDim2.new(0, 16, 0, 16)
-    arrow.Position = UDim2.new(1, -25, 0.5, -8)
-    arrow.BackgroundTransparency = 1
-    arrow.Image = "rbxassetid://6031090990"
-    arrow.ImageColor3 = Colors.Text
-    arrow.Rotation = 0
-    arrow.Parent = dropdownButton
-    
-    local optionsFrame = Instance.new("Frame")
-    optionsFrame.Name = "OptionsFrame"
-    optionsFrame.Size = UDim2.new(1, 0, 0, 0)
-    optionsFrame.Position = UDim2.new(0, 0, 0, 40)
-    optionsFrame.BackgroundColor3 = Colors.Primary
-    optionsFrame.BorderSizePixel = 0
-    optionsFrame.Visible = false
-    optionsFrame.Parent = dropdownFrame
-    
-    local optionsLayout = Instance.new("UIListLayout")
-    optionsLayout.Padding = UDim.new(0, 2)
-    optionsLayout.Parent = optionsFrame
-    
-    local isOpen = false
-    local selectedOption = dropdown.Default
-
-    -- Создание опций
-    for _, option in ipairs(dropdown.Options) do
-        local optionButton = Instance.new("TextButton")
-        optionButton.Name = "Option_" .. option
-        optionButton.Size = UDim2.new(1, 0, 0, 30)
-        optionButton.BackgroundColor3 = Colors.Secondary
-        optionButton.BorderSizePixel = 0
-        optionButton.Text = option
-        optionButton.TextColor3 = Colors.Text
-        optionButton.TextSize = 12
-        optionButton.Font = Enum.Font.Gotham
-        optionButton.Parent = optionsFrame
-        
-        optionButton.MouseButton1Click:Connect(function()
-            selectedOption = option
-            dropdownButton.Text = dropdown.Name .. ": " .. option
-            TweenService:Create(arrow, TweenInfo.new(0.2), {Rotation = 0}):Play()
-            
-            -- Сохранение значения
-            if dropdown.Config then
-                Configurations[dropdown.Config] = option
-                if self.ConfigurationSaving.Enabled then
-                    SaveConfiguration(self.ConfigurationSaving.FileName, Configurations)
-                    print("Сохранено значение для", dropdown.Config, ":", option)
-                end
-            end
-            
-            dropdown.Callback(option)
-            isOpen = false
-            TweenService:Create(optionsFrame, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 0)}):Play()
-            wait(0.2)
-            optionsFrame.Visible = false
-        end)
-    end
-    
-    dropdownButton.MouseButton1Click:Connect(function()
-        isOpen = not isOpen
-        
-        if isOpen then
-            optionsFrame.Visible = true
-            local totalHeight = #dropdown.Options * 32
-            TweenService:Create(optionsFrame, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, totalHeight)}):Play()
-            TweenService:Create(arrow, TweenInfo.new(0.2), {Rotation = 180}):Play()
-        else
-            TweenService:Create(arrow, TweenInfo.new(0.2), {Rotation = 0}):Play()
-            TweenService:Create(optionsFrame, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 0)}):Play()
-            wait(0.2)
-            optionsFrame.Visible = false
-        end
-    end)
-    
-    return dropdownFrame
 end
 
 return Stellar
