@@ -1,5 +1,5 @@
 -- Stellar GUI Library for Roblox
--- Исправленная версия без ошибок nil
+-- Исправленная версия с темами и анимациями
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -24,13 +24,42 @@ local Themes = {
         Warning = Color3.fromRGB(200, 140, 0),
         Danger = Color3.fromRGB(200, 50, 50),
         Info = Color3.fromRGB(80, 180, 220)
+    },
+    Light = {
+        Primary = Color3.fromRGB(245, 245, 250),
+        Secondary = Color3.fromRGB(230, 230, 240),
+        Accent = Color3.fromRGB(0, 120, 215),
+        Text = Color3.fromRGB(30, 30, 40),
+        Success = Color3.fromRGB(0, 160, 80),
+        Warning = Color3.fromRGB(180, 120, 0),
+        Danger = Color3.fromRGB(180, 40, 40),
+        Info = Color3.fromRGB(60, 160, 200)
+    },
+    Purple = {
+        Primary = Color3.fromRGB(25, 20, 35),
+        Secondary = Color3.fromRGB(40, 30, 55),
+        Accent = Color3.fromRGB(140, 80, 255),
+        Text = Color3.fromRGB(240, 240, 240),
+        Success = Color3.fromRGB(100, 220, 140),
+        Warning = Color3.fromRGB(255, 180, 60),
+        Danger = Color3.fromRGB(255, 80, 100),
+        Info = Color3.fromRGB(160, 120, 255)
+    },
+    Red = {
+        Primary = Color3.fromRGB(30, 15, 15),
+        Secondary = Color3.fromRGB(50, 25, 25),
+        Accent = Color3.fromRGB(220, 60, 60),
+        Text = Color3.fromRGB(240, 240, 240),
+        Success = Color3.fromRGB(80, 200, 100),
+        Warning = Color3.fromRGB(255, 160, 40),
+        Danger = Color3.fromRGB(220, 60, 60),
+        Info = Color3.fromRGB(200, 100, 100)
     }
 }
 
 -- Глобальные переменные
 local Configurations = {}
-local CurrentTheme = "Dark"
-local Colors = Themes.Dark
+local CurrentColors = Themes.Dark
 
 -- Вспомогательные функции
 local function SaveConfiguration(configName, data)
@@ -101,6 +130,40 @@ local function LoadKey()
     return success and result or nil
 end
 
+-- Функция применения темы к элементам
+local function ApplyTheme(element, colors)
+    if element:IsA("Frame") then
+        if element.Name == "MainFrame" then
+            element.BackgroundColor3 = colors.Primary
+        elseif element.Name == "TitleBar" then
+            element.BackgroundColor3 = colors.Secondary
+        end
+    elseif element:IsA("TextButton") then
+        if element.Name == "Button" then
+            element.BackgroundColor3 = colors.Secondary
+            element.TextColor3 = colors.Text
+        elseif element.Name == "ToggleButton" then
+            -- Для тогглов цвет зависит от состояния
+            if not string.find(element.Name, "Success") then
+                element.BackgroundColor3 = colors.Secondary
+            end
+        end
+    elseif element:IsA("TextLabel") then
+        if element.Name == "TitleLabel" or element.Name == "SectionLabel" then
+            element.TextColor3 = colors.Accent
+        else
+            element.TextColor3 = colors.Text
+        end
+    elseif element:IsA("ScrollingFrame") then
+        element.ScrollBarImageColor3 = colors.Accent
+    end
+    
+    -- Рекурсивно применяем ко всем детям
+    for _, child in ipairs(element:GetChildren()) do
+        ApplyTheme(child, colors)
+    end
+end
+
 -- Создание основного окна
 function Stellar:CreateWindow(options)
     options = options or {}
@@ -129,8 +192,7 @@ function Stellar:CreateWindow(options)
     setmetatable(window, self)
     
     -- Установка темы
-    CurrentTheme = window.Theme
-    Colors = Themes[CurrentTheme] or Themes.Dark
+    CurrentColors = Themes[window.Theme] or Themes.Dark
     
     -- Если включена система ключей, показываем ее
     if window.KeySystem then
@@ -166,7 +228,7 @@ function Stellar:CreateMainGUI(window)
     mainFrame.Name = "MainFrame"
     mainFrame.Size = UDim2.new(0, 500, 0, 500)
     mainFrame.Position = UDim2.new(0.5, -250, 0.5, -250)
-    mainFrame.BackgroundColor3 = Colors.Primary
+    mainFrame.BackgroundColor3 = CurrentColors.Primary
     mainFrame.BorderSizePixel = 0
     mainFrame.ClipsDescendants = true
     mainFrame.Parent = screenGui
@@ -189,7 +251,7 @@ function Stellar:CreateMainGUI(window)
     local titleBar = Instance.new("Frame")
     titleBar.Name = "TitleBar"
     titleBar.Size = UDim2.new(1, 0, 0, 35)
-    titleBar.BackgroundColor3 = Colors.Secondary
+    titleBar.BackgroundColor3 = CurrentColors.Secondary
     titleBar.BorderSizePixel = 0
     titleBar.Parent = mainFrame
     
@@ -199,7 +261,7 @@ function Stellar:CreateMainGUI(window)
     titleLabel.Position = UDim2.new(0, 10, 0, 0)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Text = window.Name
-    titleLabel.TextColor3 = Colors.Text
+    titleLabel.TextColor3 = CurrentColors.Text
     titleLabel.TextSize = 14
     titleLabel.Font = Enum.Font.GothamSemibold
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -212,7 +274,7 @@ function Stellar:CreateMainGUI(window)
     minimizeButton.Position = UDim2.new(1, -70, 0, 0)
     minimizeButton.BackgroundTransparency = 1
     minimizeButton.Text = "─"
-    minimizeButton.TextColor3 = Colors.Text
+    minimizeButton.TextColor3 = CurrentColors.Text
     minimizeButton.TextSize = 16
     minimizeButton.Font = Enum.Font.GothamBold
     minimizeButton.Parent = titleBar
@@ -224,7 +286,7 @@ function Stellar:CreateMainGUI(window)
     closeButton.Position = UDim2.new(1, -35, 0, 0)
     closeButton.BackgroundTransparency = 1
     closeButton.Text = "×"
-    closeButton.TextColor3 = Colors.Text
+    closeButton.TextColor3 = CurrentColors.Text
     closeButton.TextSize = 18
     closeButton.Font = Enum.Font.GothamBold
     closeButton.Parent = titleBar
@@ -237,7 +299,7 @@ function Stellar:CreateMainGUI(window)
     container.BackgroundTransparency = 1
     container.BorderSizePixel = 0
     container.ScrollBarThickness = 4
-    container.ScrollBarImageColor3 = Colors.Accent
+    container.ScrollBarImageColor3 = CurrentColors.Accent
     container.CanvasSize = UDim2.new(0, 0, 0, 0)
     container.AutomaticCanvasSize = Enum.AutomaticSize.Y
     container.Parent = mainFrame
@@ -250,6 +312,11 @@ function Stellar:CreateMainGUI(window)
     padding.PaddingTop = UDim.new(0, 5)
     padding.PaddingBottom = UDim.new(0, 5)
     padding.Parent = container
+    
+    -- Переменные для анимации сворачивания
+    local isMinimized = false
+    local originalSize = mainFrame.Size
+    local minimizedSize = UDim2.new(0, 500, 0, 35)
     
     -- Функционал перемещения
     local dragging = false
@@ -296,7 +363,7 @@ function Stellar:CreateMainGUI(window)
         local confirmationFrame = Instance.new("Frame")
         confirmationFrame.Size = UDim2.new(0, 300, 0, 150)
         confirmationFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
-        confirmationFrame.BackgroundColor3 = Colors.Primary
+        confirmationFrame.BackgroundColor3 = CurrentColors.Primary
         confirmationFrame.BorderSizePixel = 0
         confirmationFrame.ZIndex = 11
         confirmationFrame.Parent = overlay
@@ -305,7 +372,7 @@ function Stellar:CreateMainGUI(window)
         title.Size = UDim2.new(1, 0, 0, 50)
         title.BackgroundTransparency = 1
         title.Text = "Подтверждение"
-        title.TextColor3 = Colors.Text
+        title.TextColor3 = CurrentColors.Text
         title.TextSize = 16
         title.Font = Enum.Font.GothamBold
         title.Parent = confirmationFrame
@@ -315,7 +382,7 @@ function Stellar:CreateMainGUI(window)
         message.Position = UDim2.new(0, 10, 0, 50)
         message.BackgroundTransparency = 1
         message.Text = "Вы уверены, что хотите закрыть?"
-        message.TextColor3 = Colors.Text
+        message.TextColor3 = CurrentColors.Text
         message.TextSize = 14
         message.Font = Enum.Font.Gotham
         message.TextWrapped = true
@@ -329,10 +396,10 @@ function Stellar:CreateMainGUI(window)
         
         local noButton = Instance.new("TextButton")
         noButton.Size = UDim2.new(0.4, 0, 1, 0)
-        noButton.BackgroundColor3 = Colors.Secondary
+        noButton.BackgroundColor3 = CurrentColors.Secondary
         noButton.BorderSizePixel = 0
         noButton.Text = "НЕТ"
-        noButton.TextColor3 = Colors.Text
+        noButton.TextColor3 = CurrentColors.Text
         noButton.TextSize = 14
         noButton.Font = Enum.Font.Gotham
         noButton.Parent = buttonContainer
@@ -340,10 +407,10 @@ function Stellar:CreateMainGUI(window)
         local yesButton = Instance.new("TextButton")
         yesButton.Size = UDim2.new(0.4, 0, 1, 0)
         yesButton.Position = UDim2.new(0.6, 0, 0, 0)
-        yesButton.BackgroundColor3 = Colors.Danger
+        yesButton.BackgroundColor3 = CurrentColors.Danger
         yesButton.BorderSizePixel = 0
         yesButton.Text = "ДА"
-        yesButton.TextColor3 = Colors.Text
+        yesButton.TextColor3 = CurrentColors.Text
         yesButton.TextSize = 14
         yesButton.Font = Enum.Font.Gotham
         yesButton.Parent = buttonContainer
@@ -357,17 +424,30 @@ function Stellar:CreateMainGUI(window)
         end)
     end
     
-    -- Обработчики кнопок
-    minimizeButton.MouseButton1Click:Connect(function()
-        container.Visible = not container.Visible
-        if container.Visible then
-            mainFrame.Size = UDim2.new(0, 500, 0, 500)
-            minimizeButton.Text = "─"
-        else
-            mainFrame.Size = UDim2.new(0, 500, 0, 35)
+    -- Функция сворачивания/разворачивания с анимацией
+    local function toggleMinimize()
+        isMinimized = not isMinimized
+        
+        if isMinimized then
+            -- Анимация сворачивания
+            TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Size = minimizedSize
+            }):Play()
             minimizeButton.Text = "+"
+            container.Visible = false
+        else
+            -- Анимация разворачивания
+            TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Size = originalSize
+            }):Play()
+            minimizeButton.Text = "─"
+            wait(0.3) -- Ждем завершения анимации
+            container.Visible = true
         end
-    end)
+    end
+    
+    -- Обработчики кнопок
+    minimizeButton.MouseButton1Click:Connect(toggleMinimize)
     
     closeButton.MouseButton1Click:Connect(function()
         showCloseConfirmation()
@@ -377,6 +457,7 @@ function Stellar:CreateMainGUI(window)
     window.MainFrame = mainFrame
     window.Container = container
     window.Config = Configurations
+    window.CurrentColors = CurrentColors
     
     return window
 end
@@ -409,7 +490,7 @@ function Stellar:VerifyKeySystem(keySettings, configurationSaving)
     local mainFrame = Instance.new("Frame")
     mainFrame.Size = UDim2.new(0, 400, 0, 280)
     mainFrame.Position = UDim2.new(0.5, -200, 0.5, -140)
-    mainFrame.BackgroundColor3 = Colors.Primary
+    mainFrame.BackgroundColor3 = CurrentColors.Primary
     mainFrame.BorderSizePixel = 0
     mainFrame.Parent = keyGui
     
@@ -418,7 +499,7 @@ function Stellar:VerifyKeySystem(keySettings, configurationSaving)
     title.Position = UDim2.new(0, 0, 0, 10)
     title.BackgroundTransparency = 1
     title.Text = keySettings.Title
-    title.TextColor3 = Colors.Accent
+    title.TextColor3 = CurrentColors.Accent
     title.TextSize = 20
     title.Font = Enum.Font.GothamBold
     title.Parent = mainFrame
@@ -428,7 +509,7 @@ function Stellar:VerifyKeySystem(keySettings, configurationSaving)
     subtitle.Position = UDim2.new(0, 0, 0, 60)
     subtitle.BackgroundTransparency = 1
     subtitle.Text = keySettings.Subtitle
-    subtitle.TextColor3 = Colors.Text
+    subtitle.TextColor3 = CurrentColors.Text
     subtitle.TextSize = 14
     subtitle.Font = Enum.Font.Gotham
     subtitle.Parent = mainFrame
@@ -436,11 +517,11 @@ function Stellar:VerifyKeySystem(keySettings, configurationSaving)
     local inputBox = Instance.new("TextBox")
     inputBox.Size = UDim2.new(1, -40, 0, 40)
     inputBox.Position = UDim2.new(0, 20, 0, 100)
-    inputBox.BackgroundColor3 = Colors.Secondary
+    inputBox.BackgroundColor3 = CurrentColors.Secondary
     inputBox.BorderSizePixel = 0
     inputBox.Text = ""
     inputBox.PlaceholderText = "Введите ключ..."
-    inputBox.TextColor3 = Colors.Text
+    inputBox.TextColor3 = CurrentColors.Text
     inputBox.TextSize = 14
     inputBox.Font = Enum.Font.Gotham
     inputBox.Parent = mainFrame
@@ -448,10 +529,10 @@ function Stellar:VerifyKeySystem(keySettings, configurationSaving)
     local submitButton = Instance.new("TextButton")
     submitButton.Size = UDim2.new(1, -40, 0, 40)
     submitButton.Position = UDim2.new(0, 20, 0, 160)
-    submitButton.BackgroundColor3 = Colors.Accent
+    submitButton.BackgroundColor3 = CurrentColors.Accent
     submitButton.BorderSizePixel = 0
     submitButton.Text = "ПРОВЕРИТЬ КЛЮЧ"
-    submitButton.TextColor3 = Colors.Text
+    submitButton.TextColor3 = CurrentColors.Text
     submitButton.TextSize = 16
     submitButton.Font = Enum.Font.GothamBold
     submitButton.Parent = mainFrame
@@ -461,7 +542,7 @@ function Stellar:VerifyKeySystem(keySettings, configurationSaving)
     errorLabel.Position = UDim2.new(0, 20, 0, 210)
     errorLabel.BackgroundTransparency = 1
     errorLabel.Text = ""
-    errorLabel.TextColor3 = Colors.Danger
+    errorLabel.TextColor3 = CurrentColors.Danger
     errorLabel.TextSize = 12
     errorLabel.Font = Enum.Font.Gotham
     errorLabel.Parent = mainFrame
@@ -471,7 +552,7 @@ function Stellar:VerifyKeySystem(keySettings, configurationSaving)
     note.Position = UDim2.new(0, 20, 1, -40)
     note.BackgroundTransparency = 1
     note.Text = keySettings.Note
-    note.TextColor3 = Colors.Warning
+    note.TextColor3 = CurrentColors.Warning
     note.TextSize = 11
     note.Font = Enum.Font.Gotham
     note.TextWrapped = true
@@ -552,7 +633,7 @@ function Stellar:CreateSection(options)
     sectionLabel.Size = UDim2.new(1, 0, 1, 0)
     sectionLabel.BackgroundTransparency = 1
     sectionLabel.Text = "│ " .. string.upper(section.Name)
-    sectionLabel.TextColor3 = Colors.Accent
+    sectionLabel.TextColor3 = self.CurrentColors.Accent
     sectionLabel.TextSize = 14
     sectionLabel.Font = Enum.Font.GothamBold
     sectionLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -578,10 +659,10 @@ function Stellar:CreateButton(options)
     local buttonElement = Instance.new("TextButton")
     buttonElement.Name = "Button"
     buttonElement.Size = UDim2.new(1, 0, 1, 0)
-    buttonElement.BackgroundColor3 = Colors.Secondary
+    buttonElement.BackgroundColor3 = self.CurrentColors.Secondary
     buttonElement.BorderSizePixel = 0
     buttonElement.Text = button.Name
-    buttonElement.TextColor3 = Colors.Text
+    buttonElement.TextColor3 = self.CurrentColors.Text
     buttonElement.TextSize = 13
     buttonElement.Font = Enum.Font.Gotham
     buttonElement.TextWrapped = true
@@ -589,17 +670,17 @@ function Stellar:CreateButton(options)
     
     -- Анимации
     buttonElement.MouseEnter:Connect(function()
-        TweenService:Create(buttonElement, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Accent}):Play()
+        TweenService:Create(buttonElement, TweenInfo.new(0.2), {BackgroundColor3 = self.CurrentColors.Accent}):Play()
     end)
     
     buttonElement.MouseLeave:Connect(function()
-        TweenService:Create(buttonElement, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Secondary}):Play()
+        TweenService:Create(buttonElement, TweenInfo.new(0.2), {BackgroundColor3 = self.CurrentColors.Secondary}):Play()
     end)
     
     buttonElement.MouseButton1Click:Connect(function()
-        TweenService:Create(buttonElement, TweenInfo.new(0.1), {BackgroundColor3 = Colors.Primary}):Play()
+        TweenService:Create(buttonElement, TweenInfo.new(0.1), {BackgroundColor3 = self.CurrentColors.Primary}):Play()
         wait(0.1)
-        TweenService:Create(buttonElement, TweenInfo.new(0.1), {BackgroundColor3 = Colors.Accent}):Play()
+        TweenService:Create(buttonElement, TweenInfo.new(0.1), {BackgroundColor3 = self.CurrentColors.Accent}):Play()
         button.Callback()
     end)
     
@@ -632,7 +713,7 @@ function Stellar:CreateToggle(options)
     label.Size = UDim2.new(0.7, 0, 1, 0)
     label.BackgroundTransparency = 1
     label.Text = toggle.Name
-    label.TextColor3 = Colors.Text
+    label.TextColor3 = self.CurrentColors.Text
     label.TextSize = 13
     label.Font = Enum.Font.Gotham
     label.TextXAlignment = Enum.TextXAlignment.Left
@@ -642,7 +723,7 @@ function Stellar:CreateToggle(options)
     toggleButton.Name = "ToggleButton"
     toggleButton.Size = UDim2.new(0, 50, 0, 25)
     toggleButton.Position = UDim2.new(1, -50, 0.5, -12.5)
-    toggleButton.BackgroundColor3 = toggle.Default and Colors.Success or Colors.Secondary
+    toggleButton.BackgroundColor3 = toggle.Default and self.CurrentColors.Success or self.CurrentColors.Secondary
     toggleButton.BorderSizePixel = 0
     toggleButton.Text = ""
     toggleButton.Parent = toggleFrame
@@ -651,7 +732,7 @@ function Stellar:CreateToggle(options)
     toggleCircle.Name = "ToggleCircle"
     toggleCircle.Size = UDim2.new(0, 21, 0, 21)
     toggleCircle.Position = toggle.Default and UDim2.new(1, -23, 0.5, -10.5) or UDim2.new(0, 2, 0.5, -10.5)
-    toggleCircle.BackgroundColor3 = Colors.Text
+    toggleCircle.BackgroundColor3 = self.CurrentColors.Text
     toggleCircle.BorderSizePixel = 0
     toggleCircle.Parent = toggleButton
     
@@ -665,10 +746,10 @@ function Stellar:CreateToggle(options)
         isToggled = not isToggled
         
         if isToggled then
-            TweenService:Create(toggleButton, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Success}):Play()
+            TweenService:Create(toggleButton, TweenInfo.new(0.2), {BackgroundColor3 = self.CurrentColors.Success}):Play()
             TweenService:Create(toggleCircle, TweenInfo.new(0.2), {Position = UDim2.new(1, -23, 0.5, -10.5)}):Play()
         else
-            TweenService:Create(toggleButton, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Secondary}):Play()
+            TweenService:Create(toggleButton, TweenInfo.new(0.2), {BackgroundColor3 = self.CurrentColors.Secondary}):Play()
             TweenService:Create(toggleCircle, TweenInfo.new(0.2), {Position = UDim2.new(0, 2, 0.5, -10.5)}):Play()
         end
         
@@ -719,7 +800,7 @@ function Stellar:CreateSlider(options)
     label.Size = UDim2.new(0.7, 0, 1, 0)
     label.BackgroundTransparency = 1
     label.Text = slider.Name
-    label.TextColor3 = Colors.Text
+    label.TextColor3 = self.CurrentColors.Text
     label.TextSize = 13
     label.Font = Enum.Font.Gotham
     label.TextXAlignment = Enum.TextXAlignment.Left
@@ -731,7 +812,7 @@ function Stellar:CreateSlider(options)
     valueLabel.Position = UDim2.new(0.7, 0, 0, 0)
     valueLabel.BackgroundTransparency = 1
     valueLabel.Text = tostring(slider.Default) .. slider.Suffix
-    valueLabel.TextColor3 = Colors.Accent
+    valueLabel.TextColor3 = self.CurrentColors.Accent
     valueLabel.TextSize = 13
     valueLabel.Font = Enum.Font.GothamSemibold
     valueLabel.TextXAlignment = Enum.TextXAlignment.Right
@@ -741,14 +822,14 @@ function Stellar:CreateSlider(options)
     sliderTrack.Name = "SliderTrack"
     sliderTrack.Size = UDim2.new(1, 0, 0, 6)
     sliderTrack.Position = UDim2.new(0, 0, 1, -25)
-    sliderTrack.BackgroundColor3 = Colors.Secondary
+    sliderTrack.BackgroundColor3 = self.CurrentColors.Secondary
     sliderTrack.BorderSizePixel = 0
     sliderTrack.Parent = sliderFrame
     
     local sliderFill = Instance.new("Frame")
     sliderFill.Name = "SliderFill"
     sliderFill.Size = UDim2.new(0, 0, 1, 0)
-    sliderFill.BackgroundColor3 = Colors.Accent
+    sliderFill.BackgroundColor3 = self.CurrentColors.Accent
     sliderFill.BorderSizePixel = 0
     sliderFill.Parent = sliderTrack
     
@@ -756,7 +837,7 @@ function Stellar:CreateSlider(options)
     sliderButton.Name = "SliderButton"
     sliderButton.Size = UDim2.new(0, 16, 0, 16)
     sliderButton.Position = UDim2.new(0, -8, 0.5, -8)
-    sliderButton.BackgroundColor3 = Colors.Text
+    sliderButton.BackgroundColor3 = self.CurrentColors.Text
     sliderButton.BorderSizePixel = 0
     sliderButton.Text = ""
     sliderButton.Parent = sliderTrack
