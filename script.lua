@@ -1,5 +1,5 @@
 -- Stellar GUI Library for Roblox
--- Исправленная версия с правильной работой системы ключей
+-- Исправленная версия без ошибок nil
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -134,15 +134,14 @@ function Stellar:CreateWindow(options)
     
     -- Если включена система ключей, показываем ее
     if window.KeySystem then
-        local keyVerified, keyGui = self:VerifyKeySystem(window.KeySettings)
+        local keyVerified = self:VerifyKeySystem(window.KeySettings, window.ConfigurationSaving)
         if not keyVerified then
             return nil
         end
-        -- Если ключ верный, keyGui будет уничтожен и продолжаем создание GUI
     end
     
     -- Загрузка конфигурации
-    if window.ConfigurationSaving.Enabled then
+    if window.ConfigurationSaving and window.ConfigurationSaving.Enabled then
         local loadedConfig = LoadConfiguration(window.ConfigurationSaving.FileName)
         if loadedConfig then
             Configurations = loadedConfig
@@ -383,7 +382,7 @@ function Stellar:CreateMainGUI(window)
 end
 
 -- Система проверки ключа (ИСПРАВЛЕННАЯ)
-function Stellar:VerifyKeySystem(keySettings)
+function Stellar:VerifyKeySystem(keySettings, configurationSaving)
     -- Если ключ уже сохранен и включено сохранение
     if keySettings.SaveKey then
         local savedKey = LoadKey()
@@ -391,9 +390,9 @@ function Stellar:VerifyKeySystem(keySettings)
             for _, validKey in ipairs(keySettings.Key) do
                 if savedKey == validKey then
                     -- Сохраняем ключ в конфигурации
-                    if self.ConfigurationSaving.Enabled then
+                    if configurationSaving and configurationSaving.Enabled then
                         Configurations["SavedKey"] = savedKey
-                        SaveConfiguration(self.ConfigurationSaving.FileName, Configurations)
+                        SaveConfiguration(configurationSaving.FileName, Configurations)
                     end
                     return true
                 end
@@ -479,18 +478,14 @@ function Stellar:VerifyKeySystem(keySettings)
     note.Parent = mainFrame
     
     local validKey = false
-    local connection
     
     local function cleanup()
-        if connection then
-            connection:Disconnect()
-        end
         if keyGui then
             keyGui:Destroy()
         end
     end
     
-    connection = submitButton.MouseButton1Click:Connect(function()
+    submitButton.MouseButton1Click:Connect(function()
         local enteredKey = inputBox.Text
         
         -- Проверка ключа
@@ -505,9 +500,9 @@ function Stellar:VerifyKeySystem(keySettings)
             if keySettings.SaveKey then
                 SaveKey(enteredKey)
                 -- Сохраняем ключ в конфигурации
-                if self.ConfigurationSaving.Enabled then
+                if configurationSaving and configurationSaving.Enabled then
                     Configurations["SavedKey"] = enteredKey
-                    SaveConfiguration(self.ConfigurationSaving.FileName, Configurations)
+                    SaveConfiguration(configurationSaving.FileName, Configurations)
                 end
             end
             cleanup()
@@ -519,14 +514,22 @@ function Stellar:VerifyKeySystem(keySettings)
     -- Также проверяем при нажатии Enter
     inputBox.FocusLost:Connect(function(enterPressed)
         if enterPressed then
-            submitButton.MouseButton1Click:Connect()
+            submitButton.MouseButton1Click()
         end
     end)
     
     -- Ожидание валидации
-    repeat 
-        wait() 
-    until not keyGui.Parent or validKey
+    local startTime = tick()
+    while keyGui and keyGui.Parent do
+        if validKey then
+            break
+        end
+        if tick() - startTime > 300 then -- 5 минут таймаут
+            cleanup()
+            break
+        end
+        wait()
+    end
     
     return validKey
 end
@@ -672,7 +675,7 @@ function Stellar:CreateToggle(options)
         -- Сохранение состояния
         if toggle.Config then
             Configurations[toggle.Config] = isToggled
-            if self.ConfigurationSaving.Enabled then
+            if self.ConfigurationSaving and self.ConfigurationSaving.Enabled then
                 SaveConfiguration(self.ConfigurationSaving.FileName, Configurations)
             end
         end
@@ -779,7 +782,7 @@ function Stellar:CreateSlider(options)
         -- Сохранение значения
         if slider.Config then
             Configurations[slider.Config] = value
-            if self.ConfigurationSaving.Enabled then
+            if self.ConfigurationSaving and self.ConfigurationSaving.Enabled then
                 SaveConfiguration(self.ConfigurationSaving.FileName, Configurations)
             end
         end
