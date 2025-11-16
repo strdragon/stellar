@@ -18,7 +18,8 @@ Stellar.KeySystem = {
     Title = "Stellar Key System",
     Keys = {"12345", "stellar2024", "admin"},
     Input = "",
-    FileName = "stellar_key.txt"
+    FileName = "stellar_key.txt",
+    SaveKey = true -- Добавлен параметр сохранения ключа
 }
 
 Stellar.Saving = {
@@ -61,6 +62,7 @@ function Stellar:CreateWindow(config)
         Stellar.KeySystem.Title = config.KeySystem.Title or "Stellar Key System"
         Stellar.KeySystem.Keys = config.KeySystem.Keys or {"default"}
         Stellar.KeySystem.Input = config.KeySystem.Input or ""
+        Stellar.KeySystem.SaveKey = config.KeySystem.SaveKey ~= nil and config.KeySystem.SaveKey or true
     end
     
     -- Система сохранения
@@ -74,8 +76,8 @@ function Stellar:CreateWindow(config)
     if Stellar.KeySystem.Enabled then
         local keyValid = false
         
-        -- Попытка загрузить сохраненный ключ
-        if isfile(Stellar.KeySystem.FileName) then
+        -- Попытка загрузить сохраненный ключ (только если SaveKey = true)
+        if Stellar.KeySystem.SaveKey and isfile(Stellar.KeySystem.FileName) then
             local savedKey = readfile(Stellar.KeySystem.FileName)
             for _, validKey in pairs(Stellar.KeySystem.Keys) do
                 if savedKey == validKey then
@@ -800,56 +802,9 @@ function Stellar:CreateWindow(config)
         end)
     end
     
-    -- Функция управления ключами
-    function Window:ChangeKeySystem(enabled, title, keys)
-        if enabled ~= nil then
-            Stellar.KeySystem.Enabled = enabled
-        end
-        if title then
-            Stellar.KeySystem.Title = title
-        end
-        if keys then
-            Stellar.KeySystem.Keys = keys
-        end
-        
-        -- Сохраняем настройки системы ключей
-        if Stellar.Saving.Enabled then
-            Window.Settings.KeySystemEnabled = Stellar.KeySystem.Enabled
-            Window.Settings.KeySystemTitle = Stellar.KeySystem.Title
-            Window:SaveConfiguration()
-        end
-    end
-    
-    -- Функция удаления сохраненного ключа
-    function Window:ClearSavedKey()
-        if isfile(Stellar.KeySystem.FileName) then
-            delfile(Stellar.KeySystem.FileName)
-            Stellar:Notify({
-                Title = "Ключ удален",
-                Content = "Сохраненный ключ успешно удален!",
-                Duration = 2
-            })
-        else
-            Stellar:Notify({
-                Title = "Информация",
-                Content = "Сохраненный ключ не найден!",
-                Duration = 2
-            })
-        end
-    end
-    
     -- Автоматическая загрузка настроек при создании
     if Stellar.Saving.Enabled then
-        local loaded = Window:LoadConfiguration()
-        if loaded then
-            -- Восстанавливаем настройки системы ключей
-            if loaded.KeySystemEnabled ~= nil then
-                Stellar.KeySystem.Enabled = loaded.KeySystemEnabled
-            end
-            if loaded.KeySystemTitle then
-                Stellar.KeySystem.Title = loaded.KeySystemTitle
-            end
-        end
+        Window:LoadConfiguration()
     end
     
     return Window
@@ -931,8 +886,10 @@ function Stellar:ShowKeySystem()
         local inputKey = InputBox.Text
         for _, validKey in pairs(Stellar.KeySystem.Keys) do
             if inputKey == validKey then
-                -- Сохранение ключа в файл
-                writefile(Stellar.KeySystem.FileName, inputKey)
+                -- Сохранение ключа в файл (только если SaveKey = true)
+                if Stellar.KeySystem.SaveKey then
+                    writefile(Stellar.KeySystem.FileName, inputKey)
+                end
                 result = true
                 KeyGui:Destroy()
                 return
