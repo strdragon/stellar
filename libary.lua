@@ -322,6 +322,11 @@ end
 
 -- Основной класс Window
 function Stellar:CreateWindow(config)
+    -- Обработка упрощенного синтаксиса
+    if type(config) == "string" then
+        config = {Name = config}
+    end
+    
     local Window = {
         Tabs = {},
         CurrentTheme = config.Theme or "Red",
@@ -475,15 +480,21 @@ function Stellar:CreateWindow(config)
         end
     end)
     
-    -- Функция сворачивания
+    -- Функция сворачивания (ИСПРАВЛЕНА)
     MinimizeButton.MouseButton1Click:Connect(function()
         Window.IsMinimized = not Window.IsMinimized
         if Window.IsMinimized then
             Tween(MainFrame, {Size = UDim2.new(0, 500, 0, 30)}, 0.3)
-            Tween(MinimizeButton, {Text = "+"}, 0.2)
+            -- Меняем текст без твина
+            task.spawn(function()
+                MinimizeButton.Text = "+"
+            end)
         else
             Tween(MainFrame, {Size = UDim2.new(0, 500, 0, 400)}, 0.3)
-            Tween(MinimizeButton, {Text = "_"}, 0.2)
+            -- Меняем текст без твина
+            task.spawn(function()
+                MinimizeButton.Text = "_"
+            end)
         end
     end)
     
@@ -700,7 +711,244 @@ function Stellar:CreateWindow(config)
                 return Button
             end
             
-            -- ... (остальные оригинальные функции CreateToggle, CreateSlider и т.д. остаются такими же)
+            function Section:CreateToggle(toggleConfig)
+                if type(toggleConfig) == "string" then
+                    toggleConfig = {Name = toggleConfig}
+                end
+                
+                local Toggle = {
+                    Value = toggleConfig.Default or false
+                }
+                
+                local ToggleFrame = Create("Frame", {
+                    Name = "ToggleFrame",
+                    Size = UDim2.new(1, -10, 0, 30),
+                    BackgroundColor3 = Stellar.Themes[Window.CurrentTheme].Secondary,
+                    BorderSizePixel = 0,
+                    Parent = self.ElementContainer
+                })
+                
+                Create("UICorner", {
+                    CornerRadius = UDim.new(0, 4),
+                    Parent = ToggleFrame
+                })
+                
+                local ToggleButton = Create("TextButton", {
+                    Name = "ToggleButton",
+                    Size = UDim2.new(0, 20, 0, 20),
+                    Position = UDim2.new(0, 10, 0.5, -10),
+                    BackgroundColor3 = Toggle.Value and Stellar.Themes[Window.CurrentTheme].Main or Color3.fromRGB(80, 80, 80),
+                    BorderSizePixel = 0,
+                    Text = "",
+                    Parent = ToggleFrame
+                })
+                
+                Create("UICorner", {
+                    CornerRadius = UDim.new(0, 4),
+                    Parent = ToggleButton
+                })
+                
+                local ToggleLabel = Create("TextLabel", {
+                    Name = "ToggleLabel",
+                    Size = UDim2.new(1, -40, 1, 0),
+                    Position = UDim2.new(0, 40, 0, 0),
+                    BackgroundTransparency = 1,
+                    Text = toggleConfig.Name,
+                    TextColor3 = Stellar.Themes[Window.CurrentTheme].Text,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    Font = Enum.Font.Gotham,
+                    TextSize = 12,
+                    Parent = ToggleFrame
+                })
+                
+                local function UpdateToggle()
+                    Tween(ToggleButton, {
+                        BackgroundColor3 = Toggle.Value and Stellar.Themes[Window.CurrentTheme].Main or Color3.fromRGB(80, 80, 80)
+                    }, 0.2)
+                    
+                    if toggleConfig.Callback then
+                        toggleConfig.Callback(Toggle.Value)
+                    end
+                end
+                
+                ToggleButton.MouseButton1Click:Connect(function()
+                    Toggle.Value = not Toggle.Value
+                    UpdateToggle()
+                end)
+                
+                function Toggle:Set(value)
+                    Toggle.Value = value
+                    UpdateToggle()
+                end
+                
+                return Toggle
+            end
+            
+            function Section:CreateSlider(sliderConfig)
+                if type(sliderConfig) == "string" then
+                    sliderConfig = {Name = sliderConfig}
+                end
+                
+                local Slider = {
+                    Value = sliderConfig.Default or sliderConfig.Min
+                }
+                
+                local SliderFrame = Create("Frame", {
+                    Name = "SliderFrame",
+                    Size = UDim2.new(1, -10, 0, 50),
+                    BackgroundColor3 = Stellar.Themes[Window.CurrentTheme].Secondary,
+                    BorderSizePixel = 0,
+                    Parent = self.ElementContainer
+                })
+                
+                Create("UICorner", {
+                    CornerRadius = UDim.new(0, 4),
+                    Parent = SliderFrame
+                })
+                
+                local SliderLabel = Create("TextLabel", {
+                    Name = "SliderLabel",
+                    Size = UDim2.new(1, -20, 0, 20),
+                    Position = UDim2.new(0, 10, 0, 5),
+                    BackgroundTransparency = 1,
+                    Text = sliderConfig.Name,
+                    TextColor3 = Stellar.Themes[Window.CurrentTheme].Text,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    Font = Enum.Font.Gotham,
+                    TextSize = 12,
+                    Parent = SliderFrame
+                })
+                
+                local ValueLabel = Create("TextLabel", {
+                    Name = "ValueLabel",
+                    Size = UDim2.new(0, 60, 0, 20),
+                    Position = UDim2.new(1, -70, 0, 5),
+                    BackgroundTransparency = 1,
+                    Text = tostring(Slider.Value),
+                    TextColor3 = Stellar.Themes[Window.CurrentTheme].Text,
+                    TextXAlignment = Enum.TextXAlignment.Right,
+                    Font = Enum.Font.Gotham,
+                    TextSize = 12,
+                    Parent = SliderFrame
+                })
+                
+                local Track = Create("Frame", {
+                    Name = "Track",
+                    Size = UDim2.new(1, -20, 0, 4),
+                    Position = UDim2.new(0, 10, 1, -15),
+                    BackgroundColor3 = Color3.fromRGB(60, 60, 60),
+                    BorderSizePixel = 0,
+                    Parent = SliderFrame
+                })
+                
+                Create("UICorner", {
+                    CornerRadius = UDim.new(1, 0),
+                    Parent = Track
+                })
+                
+                local Fill = Create("Frame", {
+                    Name = "Fill",
+                    Size = UDim2.new(0, 0, 1, 0),
+                    BackgroundColor3 = Stellar.Themes[Window.CurrentTheme].Main,
+                    BorderSizePixel = 0,
+                    Parent = Track
+                })
+                
+                Create("UICorner", {
+                    CornerRadius = UDim.new(1, 0),
+                    Parent = Fill
+                })
+                
+                local Handle = Create("TextButton", {
+                    Name = "Handle",
+                    Size = UDim2.new(0, 12, 0, 12),
+                    Position = UDim2.new(0, -6, 0.5, -6),
+                    BackgroundColor3 = Stellar.Themes[Window.CurrentTheme].Main,
+                    BorderSizePixel = 0,
+                    Text = "",
+                    Parent = Track
+                })
+                
+                Create("UICorner", {
+                    CornerRadius = UDim.new(1, 0),
+                    Parent = Handle
+                })
+                
+                local function UpdateSlider()
+                    local percent = (Slider.Value - sliderConfig.Min) / (sliderConfig.Max - sliderConfig.Min)
+                    Fill.Size = UDim2.new(percent, 0, 1, 0)
+                    Handle.Position = UDim2.new(percent, -6, 0.5, -6)
+                    ValueLabel.Text = tostring(Slider.Value)
+                    
+                    if sliderConfig.Callback then
+                        sliderConfig.Callback(Slider.Value)
+                    end
+                end
+                
+                local dragging = false
+                
+                local function StartDragging()
+                    dragging = true
+                end
+                
+                local function StopDragging()
+                    dragging = false
+                end
+                
+                local function UpdateSliderFromMouse()
+                    if not dragging then return end
+                    
+                    local mousePos = UserInputService:GetMouseLocation()
+                    local trackAbsolutePos = Track.AbsolutePosition
+                    local trackAbsoluteSize = Track.AbsoluteSize
+                    
+                    local relativeX = mousePos.X - trackAbsolutePos.X
+                    local percent = math.clamp(relativeX / trackAbsoluteSize.X, 0, 1)
+                    Slider.Value = math.floor(sliderConfig.Min + (sliderConfig.Max - sliderConfig.Min) * percent)
+                    UpdateSlider()
+                end
+                
+                -- Исправленные обработчики событий для слайдера
+                local function onInputBegan(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        if input.Position.X >= Track.AbsolutePosition.X and input.Position.X <= Track.AbsolutePosition.X + Track.AbsoluteSize.X and
+                           input.Position.Y >= Track.AbsolutePosition.Y and input.Position.Y <= Track.AbsolutePosition.Y + Track.AbsoluteSize.Y then
+                            StartDragging()
+                            UpdateSliderFromMouse()
+                        end
+                    end
+                end
+                
+                local function onInputEnded(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        StopDragging()
+                    end
+                end
+                
+                local function onInputChanged(input)
+                    if input.UserInputType == Enum.UserInputType.MouseMovement then
+                        UpdateSliderFromMouse()
+                    end
+                end
+                
+                -- Подключаем обработчики к треку и хендлу
+                Track.InputBegan:Connect(onInputBegan)
+                Handle.InputBegan:Connect(onInputBegan)
+                
+                UserInputService.InputEnded:Connect(onInputEnded)
+                UserInputService.InputChanged:Connect(onInputChanged)
+                
+                UpdateSlider()
+                
+                function Slider:Set(value)
+                    Slider.Value = math.clamp(value, sliderConfig.Min, sliderConfig.Max)
+                    UpdateSlider()
+                end
+                
+                return Slider
+            end
+            
+            -- ... (остальные функции остаются такими же)
             
             return Section
         end
@@ -708,13 +956,177 @@ function Stellar:CreateWindow(config)
         return Tab
     end
     
-    -- Остальные функции Window (Notify, ConfirmDestroy, Destroy, ChangeTheme) остаются такими же
     function Window:Notify(notificationConfig)
-        -- ... (код уведомлений)
+        local Notification = Create("Frame", {
+            Name = "Notification",
+            Size = UDim2.new(0, 300, 0, 80),
+            Position = UDim2.new(1, 10, 1, -90),
+            BackgroundColor3 = Stellar.Themes[Window.CurrentTheme].Secondary,
+            BorderSizePixel = 0,
+            Parent = ScreenGui
+        })
+        
+        Create("UICorner", {
+            CornerRadius = UDim.new(0, 8),
+            Parent = Notification
+        })
+        
+        local Title = Create("TextLabel", {
+            Name = "Title",
+            Size = UDim2.new(1, -20, 0, 20),
+            Position = UDim2.new(0, 10, 0, 10),
+            BackgroundTransparency = 1,
+            Text = notificationConfig.Title,
+            TextColor3 = Stellar.Themes[Window.CurrentTheme].Text,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.GothamBold,
+            TextSize = 14,
+            Parent = Notification
+        })
+        
+        local Content = Create("TextLabel", {
+            Name = "Content",
+            Size = UDim2.new(1, -20, 1, -40),
+            Position = UDim2.new(0, 10, 0, 30),
+            BackgroundTransparency = 1,
+            Text = notificationConfig.Content,
+            TextColor3 = Stellar.Themes[Window.CurrentTheme].Text,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.TextYAlignment.Top,
+            TextWrapped = true,
+            Font = Enum.Font.Gotham,
+            TextSize = 12,
+            Parent = Notification
+        })
+        
+        -- Анимация появления
+        Notification.Position = UDim2.new(1, 10, 1, 10)
+        Tween(Notification, {Position = UDim2.new(1, 10, 1, -90)}, 0.3)
+        
+        -- Автоматическое закрытие
+        if notificationConfig.Duration then
+            task.wait(notificationConfig.Duration)
+            Tween(Notification, {Position = UDim2.new(1, 10, 1, 10)}, 0.3)
+            task.wait(0.3)
+            Notification:Destroy()
+        end
     end
     
     function Window:ConfirmDestroy()
-        -- ... (код подтверждения закрытия)
+        local dialogSettings = Window.CloseDialogSettings
+        
+        local ConfirmFrame = Create("Frame", {
+            Name = "ConfirmFrame",
+            Size = UDim2.new(0, 300, 0, 150),
+            Position = UDim2.new(0.5, -150, 0.5, -75),
+            BackgroundColor3 = Stellar.Themes[Window.CurrentTheme].Background,
+            BorderSizePixel = 0,
+            Parent = ScreenGui
+        })
+        
+        Create("UICorner", {
+            CornerRadius = UDim.new(0, 8),
+            Parent = ConfirmFrame
+        })
+        
+        local Title = Create("TextLabel", {
+            Name = "Title",
+            Size = UDim2.new(1, 0, 0, 40),
+            BackgroundColor3 = Stellar.Themes[Window.CurrentTheme].Main,
+            BorderSizePixel = 0,
+            Text = dialogSettings.Title,
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            Font = Enum.Font.GothamBold,
+            TextSize = 16,
+            Parent = ConfirmFrame
+        })
+        
+        Create("UICorner", {
+            CornerRadius = UDim.new(0, 8),
+            Parent = Title
+        })
+        
+        local Message = Create("TextLabel", {
+            Name = "Message",
+            Size = UDim2.new(1, -20, 0, 50),
+            Position = UDim2.new(0, 10, 0, 50),
+            BackgroundTransparency = 1,
+            Text = dialogSettings.Message,
+            TextColor3 = Stellar.Themes[Window.CurrentTheme].Text,
+            TextWrapped = true,
+            Font = Enum.Font.Gotham,
+            TextSize = 14,
+            Parent = ConfirmFrame
+        })
+        
+        local ButtonContainer = Create("Frame", {
+            Name = "ButtonContainer",
+            Size = UDim2.new(1, -20, 0, 40),
+            Position = UDim2.new(0, 10, 1, -50),
+            BackgroundTransparency = 1,
+            Parent = ConfirmFrame
+        })
+        
+        local CancelButton = Create("TextButton", {
+            Name = "CancelButton",
+            Size = UDim2.new(0, 120, 0, 35),
+            Position = UDim2.new(0, 0, 0, 0),
+            BackgroundColor3 = Color3.fromRGB(80, 80, 80),
+            BorderSizePixel = 0,
+            Text = dialogSettings.CancelText,
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            Font = Enum.Font.Gotham,
+            TextSize = 14,
+            Parent = ButtonContainer
+        })
+        
+        Create("UICorner", {
+            CornerRadius = UDim.new(0, 4),
+            Parent = CancelButton
+        })
+        
+        local ConfirmButton = Create("TextButton", {
+            Name = "ConfirmButton",
+            Size = UDim2.new(0, 120, 0, 35),
+            Position = UDim2.new(1, -120, 0, 0),
+            BackgroundColor3 = Stellar.Themes[Window.CurrentTheme].Main,
+            BorderSizePixel = 0,
+            Text = dialogSettings.ConfirmText,
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            Font = Enum.Font.GothamBold,
+            TextSize = 14,
+            Parent = ButtonContainer
+        })
+        
+        Create("UICorner", {
+            CornerRadius = UDim.new(0, 4),
+            Parent = ConfirmButton
+        })
+        
+        CancelButton.MouseButton1Click:Connect(function()
+            ConfirmFrame:Destroy()
+        end)
+        
+        ConfirmButton.MouseButton1Click:Connect(function()
+            ScreenGui:Destroy()
+        end)
+        
+        -- Анимации кнопок
+        CancelButton.MouseEnter:Connect(function()
+            Tween(CancelButton, {BackgroundColor3 = Color3.fromRGB(100, 100, 100)}, 0.2)
+        end)
+        
+        CancelButton.MouseLeave:Connect(function()
+            Tween(CancelButton, {BackgroundColor3 = Color3.fromRGB(80, 80, 80)}, 0.2)
+        end)
+        
+        ConfirmButton.MouseEnter:Connect(function()
+            Tween(ConfirmButton, {BackgroundColor3 = Stellar.Themes[Window.CurrentTheme].Accent}, 0.2)
+        end)
+        
+        ConfirmButton.MouseLeave:Connect(function()
+            Tween(ConfirmButton, {BackgroundColor3 = Stellar.Themes[Window.CurrentTheme].Main}, 0.2)
+        end)
     end
     
     function Window:Destroy()
@@ -724,6 +1136,7 @@ function Stellar:CreateWindow(config)
     function Window:ChangeTheme(themeName)
         if Stellar.Themes[themeName] then
             Window.CurrentTheme = themeName
+            -- Обновление цветов всех элементов
             TopBar.BackgroundColor3 = Stellar.Themes[themeName].Main
             TabContainer.BackgroundColor3 = Stellar.Themes[themeName].Secondary
             MainFrame.BackgroundColor3 = Stellar.Themes[themeName].Background
