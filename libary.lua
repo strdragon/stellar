@@ -61,6 +61,10 @@ end
 
 -- Key System
 function Stellar:CreateKeySystem(config)
+    if not config.Enabled then
+        return true
+    end
+    
     local KeySystem = {
         ValidKeys = config.Key or {},
         SaveKey = config.SaveKey or false,
@@ -811,21 +815,35 @@ function Stellar:CreateWindow(config)
                     UpdateSlider()
                 end
                 
-                -- Исправленные обработчики событий
-                Handle.MouseButton1Down:Connect(StartDragging)
-                Track.MouseButton1Down:Connect(StartDragging)
+                -- Исправленные обработчики событий для слайдера
+                local function onInputBegan(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        if input.Position.X >= Track.AbsolutePosition.X and input.Position.X <= Track.AbsolutePosition.X + Track.AbsoluteSize.X and
+                           input.Position.Y >= Track.AbsolutePosition.Y and input.Position.Y <= Track.AbsolutePosition.Y + Track.AbsoluteSize.Y then
+                            StartDragging()
+                            UpdateSliderFromMouse()
+                        end
+                    end
+                end
                 
-                UserInputService.InputEnded:Connect(function(input)
+                local function onInputEnded(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 then
                         StopDragging()
                     end
-                end)
+                end
                 
-                UserInputService.InputChanged:Connect(function(input)
+                local function onInputChanged(input)
                     if input.UserInputType == Enum.UserInputType.MouseMovement then
                         UpdateSliderFromMouse()
                     end
-                end)
+                end
+                
+                -- Подключаем обработчики к треку и хендлу
+                Track.InputBegan:Connect(onInputBegan)
+                Handle.InputBegan:Connect(onInputBegan)
+                
+                UserInputService.InputEnded:Connect(onInputEnded)
+                UserInputService.InputChanged:Connect(onInputChanged)
                 
                 UpdateSlider()
                 
