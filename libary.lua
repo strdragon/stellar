@@ -61,7 +61,7 @@ end
 
 -- Key System
 function Stellar:CreateKeySystem(config)
-    if not config.Enabled then
+    if not config or not config.Enabled then
         return true
     end
     
@@ -895,6 +895,7 @@ function Stellar:CreateWindow(config)
                     dragging = false
                 end
                 
+                -- ИСПРАВЛЕННАЯ функция для обновления слайдера
                 local function UpdateSliderFromMouse()
                     if not dragging then return end
                     
@@ -902,19 +903,27 @@ function Stellar:CreateWindow(config)
                     local trackAbsolutePos = Track.AbsolutePosition
                     local trackAbsoluteSize = Track.AbsoluteSize
                     
-                    local relativeX = mousePos.X - trackAbsolutePos.X
-                    local percent = math.clamp(relativeX / trackAbsoluteSize.X, 0, 1)
-                    Slider.Value = math.floor(sliderConfig.Min + (sliderConfig.Max - sliderConfig.Min) * percent)
-                    UpdateSlider()
+                    -- Проверка на существование позиции трека
+                    if trackAbsolutePos and trackAbsoluteSize then
+                        local relativeX = mousePos.X - trackAbsolutePos.X
+                        local percent = math.clamp(relativeX / trackAbsoluteSize.X, 0, 1)
+                        Slider.Value = math.floor(sliderConfig.Min + (sliderConfig.Max - sliderConfig.Min) * percent)
+                        UpdateSlider()
+                    end
                 end
                 
-                -- Исправленные обработчики событий для слайдера
+                -- ИСПРАВЛЕННЫЕ обработчики событий для слайдера
                 local function onInputBegan(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        if input.Position.X >= Track.AbsolutePosition.X and input.Position.X <= Track.AbsolutePosition.X + Track.AbsoluteSize.X and
-                           input.Position.Y >= Track.AbsolutePosition.Y and input.Position.Y <= Track.AbsolutePosition.Y + Track.AbsoluteSize.Y then
-                            StartDragging()
-                            UpdateSliderFromMouse()
+                        local trackAbsolutePos = Track.AbsolutePosition
+                        local trackAbsoluteSize = Track.AbsoluteSize
+                        
+                        if trackAbsolutePos and trackAbsoluteSize then
+                            if input.Position.X >= trackAbsolutePos.X and input.Position.X <= trackAbsolutePos.X + trackAbsoluteSize.X and
+                               input.Position.Y >= trackAbsolutePos.Y and input.Position.Y <= trackAbsolutePos.Y + trackAbsoluteSize.Y then
+                                StartDragging()
+                                UpdateSliderFromMouse()
+                            end
                         end
                     end
                 end
