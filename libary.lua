@@ -19,7 +19,7 @@ Stellar.KeySystem = {
     Keys = {"12345", "stellar2024", "admin"},
     Input = "",
     FileName = "stellar_key.txt",
-    SaveKey = true -- Добавлен параметр сохранения ключа
+    CopyLink = "" -- Добавлен параметр для ссылки
 }
 
 Stellar.Saving = {
@@ -37,6 +37,17 @@ local function tweenObject(object, properties, duration)
     local tween = TweenService:Create(object, tweenInfo, properties)
     tween:Play()
     return tween
+end
+
+-- Функция для копирования в буфер обмена
+local function copyToClipboard(text)
+    local Clipboard = setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set)
+    if Clipboard then
+        Clipboard(text)
+        return true
+    else
+        return false
+    end
 end
 
 -- Создание главного окна
@@ -62,7 +73,7 @@ function Stellar:CreateWindow(config)
         Stellar.KeySystem.Title = config.KeySystem.Title or "Stellar Key System"
         Stellar.KeySystem.Keys = config.KeySystem.Keys or {"default"}
         Stellar.KeySystem.Input = config.KeySystem.Input or ""
-        Stellar.KeySystem.SaveKey = config.KeySystem.SaveKey ~= nil and config.KeySystem.SaveKey or true
+        Stellar.KeySystem.CopyLink = config.KeySystem.CopyLink or ""
     end
     
     -- Система сохранения
@@ -76,8 +87,8 @@ function Stellar:CreateWindow(config)
     if Stellar.KeySystem.Enabled then
         local keyValid = false
         
-        -- Попытка загрузить сохраненный ключ (только если SaveKey = true)
-        if Stellar.KeySystem.SaveKey and isfile(Stellar.KeySystem.FileName) then
+        -- Попытка загрузить сохраненный ключ
+        if isfile(Stellar.KeySystem.FileName) then
             local savedKey = readfile(Stellar.KeySystem.FileName)
             for _, validKey in pairs(Stellar.KeySystem.Keys) do
                 if savedKey == validKey then
@@ -818,8 +829,8 @@ function Stellar:ShowKeySystem()
     
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "KeyFrame"
-    MainFrame.Size = UDim2.new(0, 400, 0, 250)
-    MainFrame.Position = UDim2.new(0.5, -200, 0.5, -125)
+    MainFrame.Size = UDim2.new(0, 400, 0, 280) -- Увеличил высоту для кнопки Copy Link
+    MainFrame.Position = UDim2.new(0.5, -200, 0.5, -140)
     MainFrame.BackgroundColor3 = Stellar.Configuration.WindowBackground
     MainFrame.BorderSizePixel = 1
     MainFrame.BorderColor3 = Stellar.Configuration.BorderColor
@@ -853,7 +864,7 @@ function Stellar:ShowKeySystem()
     local InputBox = Instance.new("TextBox")
     InputBox.Name = "KeyInput"
     InputBox.Size = UDim2.new(0.8, 0, 0, 40)
-    InputBox.Position = UDim2.new(0.1, 0, 0.3, 0)
+    InputBox.Position = UDim2.new(0.1, 0, 0.25, 0)
     InputBox.BackgroundColor3 = Stellar.Configuration.TabBackground
     InputBox.TextColor3 = Stellar.Configuration.TextColor
     InputBox.Font = Enum.Font.Gotham
@@ -865,20 +876,37 @@ function Stellar:ShowKeySystem()
     InputCorner.CornerRadius = UDim.new(0, 6)
     InputCorner.Parent = InputBox
     
+    -- Кнопка Submit
     local SubmitButton = Instance.new("TextButton")
     SubmitButton.Name = "SubmitButton"
-    SubmitButton.Size = UDim2.new(0.6, 0, 0, 40)
-    SubmitButton.Position = UDim2.new(0.2, 0, 0.6, 0)
-    SubmitButton.BackgroundColor3 = Stellar.Configuration.Accent
+    SubmitButton.Size = UDim2.new(0.35, 0, 0, 35)
+    SubmitButton.Position = UDim2.new(0.1, 0, 0.6, 0)
+    SubmitButton.BackgroundColor3 = Stellar.Configuration.SuccessColor
     SubmitButton.TextColor3 = Stellar.Configuration.TextColor
     SubmitButton.Text = "ПОДТВЕРДИТЬ"
     SubmitButton.Font = Enum.Font.GothamBold
-    SubmitButton.TextSize = 14
+    SubmitButton.TextSize = 12
     SubmitButton.Parent = MainFrame
     
     local SubmitCorner = Instance.new("UICorner")
     SubmitCorner.CornerRadius = UDim.new(0, 6)
     SubmitCorner.Parent = SubmitButton
+    
+    -- Кнопка Copy Link
+    local CopyLinkButton = Instance.new("TextButton")
+    CopyLinkButton.Name = "CopyLinkButton"
+    CopyLinkButton.Size = UDim2.new(0.35, 0, 0, 35)
+    CopyLinkButton.Position = UDim2.new(0.55, 0, 0.6, 0)
+    CopyLinkButton.BackgroundColor3 = Stellar.Configuration.Accent
+    CopyLinkButton.TextColor3 = Stellar.Configuration.TextColor
+    CopyLinkButton.Text = "COPY LINK"
+    CopyLinkButton.Font = Enum.Font.GothamBold
+    CopyLinkButton.TextSize = 12
+    CopyLinkButton.Parent = MainFrame
+    
+    local CopyLinkCorner = Instance.new("UICorner")
+    CopyLinkCorner.CornerRadius = UDim.new(0, 6)
+    CopyLinkCorner.Parent = CopyLinkButton
     
     local result = false
     
@@ -886,10 +914,8 @@ function Stellar:ShowKeySystem()
         local inputKey = InputBox.Text
         for _, validKey in pairs(Stellar.KeySystem.Keys) do
             if inputKey == validKey then
-                -- Сохранение ключа в файл (только если SaveKey = true)
-                if Stellar.KeySystem.SaveKey then
-                    writefile(Stellar.KeySystem.FileName, inputKey)
-                end
+                -- Сохранение ключа в файл
+                writefile(Stellar.KeySystem.FileName, inputKey)
                 result = true
                 KeyGui:Destroy()
                 return
@@ -900,6 +926,48 @@ function Stellar:ShowKeySystem()
             Content = "Неверный ключ доступа!",
             Duration = 3
         })
+    end)
+    
+    CopyLinkButton.MouseButton1Click:Connect(function()
+        if Stellar.KeySystem.CopyLink and Stellar.KeySystem.CopyLink ~= "" then
+            local success = copyToClipboard(Stellar.KeySystem.CopyLink)
+            if success then
+                Stellar:Notify({
+                    Title = "Успех",
+                    Content = "Ссылка скопирована в буфер обмена!",
+                    Duration = 2
+                })
+            else
+                Stellar:Notify({
+                    Title = "Ошибка",
+                    Content = "Не удалось скопировать ссылку",
+                    Duration = 2
+                })
+            end
+        else
+            Stellar:Notify({
+                Title = "Информация",
+                Content = "Ссылка не указана в настройках",
+                Duration = 2
+            })
+        end
+    end)
+    
+    -- Анимации кнопок
+    SubmitButton.MouseEnter:Connect(function()
+        tweenObject(SubmitButton, {BackgroundColor3 = Color3.fromRGB(0, 180, 0)}, 0.2)
+    end)
+    
+    SubmitButton.MouseLeave:Connect(function()
+        tweenObject(SubmitButton, {BackgroundColor3 = Stellar.Configuration.SuccessColor}, 0.2)
+    end)
+    
+    CopyLinkButton.MouseEnter:Connect(function()
+        tweenObject(CopyLinkButton, {BackgroundColor3 = Color3.fromRGB(20, 100, 255)}, 0.2)
+    end)
+    
+    CopyLinkButton.MouseLeave:Connect(function()
+        tweenObject(CopyLinkButton, {BackgroundColor3 = Stellar.Configuration.Accent}, 0.2)
     end)
     
     -- Ожидание результата
