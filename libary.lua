@@ -800,9 +800,56 @@ function Stellar:CreateWindow(config)
         end)
     end
     
+    -- Функция управления ключами
+    function Window:ChangeKeySystem(enabled, title, keys)
+        if enabled ~= nil then
+            Stellar.KeySystem.Enabled = enabled
+        end
+        if title then
+            Stellar.KeySystem.Title = title
+        end
+        if keys then
+            Stellar.KeySystem.Keys = keys
+        end
+        
+        -- Сохраняем настройки системы ключей
+        if Stellar.Saving.Enabled then
+            Window.Settings.KeySystemEnabled = Stellar.KeySystem.Enabled
+            Window.Settings.KeySystemTitle = Stellar.KeySystem.Title
+            Window:SaveConfiguration()
+        end
+    end
+    
+    -- Функция удаления сохраненного ключа
+    function Window:ClearSavedKey()
+        if isfile(Stellar.KeySystem.FileName) then
+            delfile(Stellar.KeySystem.FileName)
+            Stellar:Notify({
+                Title = "Ключ удален",
+                Content = "Сохраненный ключ успешно удален!",
+                Duration = 2
+            })
+        else
+            Stellar:Notify({
+                Title = "Информация",
+                Content = "Сохраненный ключ не найден!",
+                Duration = 2
+            })
+        end
+    end
+    
     -- Автоматическая загрузка настроек при создании
     if Stellar.Saving.Enabled then
-        Window:LoadConfiguration()
+        local loaded = Window:LoadConfiguration()
+        if loaded then
+            -- Восстанавливаем настройки системы ключей
+            if loaded.KeySystemEnabled ~= nil then
+                Stellar.KeySystem.Enabled = loaded.KeySystemEnabled
+            end
+            if loaded.KeySystemTitle then
+                Stellar.KeySystem.Title = loaded.KeySystemTitle
+            end
+        end
     end
     
     return Window
