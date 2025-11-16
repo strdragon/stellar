@@ -1,13 +1,13 @@
--- Stellar GUI Library v3.0 - Enhanced Version
+-- Stellar GUI Library v3.1 - Enhanced Version
 local Stellar = {}
 
--- Конфигурация по умолчанию
+-- Конфигурация по умолчанию (Black Theme)
 Stellar.Configuration = {
-    WindowBackground = Color3.fromRGB(25, 25, 25),
-    TabBackground = Color3.fromRGB(35, 35, 35),
+    WindowBackground = Color3.fromRGB(20, 20, 20),
+    TabBackground = Color3.fromRGB(30, 30, 30),
     Accent = Color3.fromRGB(0, 85, 255),
     TextColor = Color3.fromRGB(255, 255, 255),
-    BorderColor = Color3.fromRGB(50, 50, 50),
+    BorderColor = Color3.fromRGB(40, 40, 40),
     SuccessColor = Color3.fromRGB(0, 200, 0),
     WarningColor = Color3.fromRGB(255, 165, 0),
     ErrorColor = Color3.fromRGB(255, 50, 50)
@@ -29,6 +29,7 @@ Stellar.Saving = {
 
 -- Анимации
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 local function tweenObject(object, properties, duration)
     local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -112,7 +113,7 @@ function Stellar:CreateWindow(config)
     UICorner.CornerRadius = UDim.new(0, 8)
     UICorner.Parent = MainFrame
     
-    -- Заголовок с градиентом
+    -- Заголовок для перетаскивания
     local TitleFrame = Instance.new("Frame")
     TitleFrame.Name = "TitleFrame"
     TitleFrame.Size = UDim2.new(1, 0, 0, 35)
@@ -129,7 +130,7 @@ function Stellar:CreateWindow(config)
     Title.Size = UDim2.new(1, -80, 1, 0)
     Title.Position = UDim2.new(0, 10, 0, 0)
     Title.BackgroundTransparency = 1
-    Title.Text = config.Name or "Stellar GUI v3.0"
+    Title.Text = config.Name or "Stellar GUI v3.1"
     Title.TextColor3 = Stellar.Configuration.TextColor
     Title.Font = Enum.Font.GothamBold
     Title.TextSize = 16
@@ -193,12 +194,49 @@ function Stellar:CreateWindow(config)
     ContentScrolling.Size = UDim2.new(1, 0, 1, 0)
     ContentScrolling.BackgroundTransparency = 1
     ContentScrolling.ScrollBarThickness = 3
-    ContentScrolling.ScrollBarImageColor3 = Stellar.Configuration.Accent
+    ContentScrolling.ScrollBarImageColor3 = Stellar.Configuration.BorderColor
     ContentScrolling.Parent = ContentContainer
     
     local ContentLayout = Instance.new("UIListLayout")
     ContentLayout.Padding = UDim.new(0, 15)
     ContentLayout.Parent = ContentScrolling
+    
+    -- Перетаскивание окна
+    local dragging
+    local dragInput
+    local dragStart
+    local startPos
+    
+    local function update(input)
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+    
+    TitleFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    TitleFrame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
     
     -- Функционал кнопок управления
     CloseButton.MouseButton1Click:Connect(function()
@@ -220,7 +258,7 @@ function Stellar:CreateWindow(config)
         Window.Visible = not Window.Visible
     end)
     
-    -- Анимации при наведении
+    -- Анимации при наведении (без свечения)
     CloseButton.MouseEnter:Connect(function()
         tweenObject(CloseButton, {BackgroundColor3 = Color3.fromRGB(200, 0, 0)}, 0.2)
     end)
@@ -264,7 +302,7 @@ function Stellar:CreateWindow(config)
         TabContent.Size = UDim2.new(1, 0, 1, 0)
         TabContent.BackgroundTransparency = 1
         TabContent.ScrollBarThickness = 3
-        TabContent.ScrollBarImageColor3 = Stellar.Configuration.Accent
+        TabContent.ScrollBarImageColor3 = Stellar.Configuration.BorderColor
         TabContent.Visible = false
         TabContent.Parent = ContentScrolling
         
@@ -283,7 +321,7 @@ function Stellar:CreateWindow(config)
         -- Анимация при наведении на таб
         TabButton.MouseEnter:Connect(function()
             if not Tab.Visible then
-                tweenObject(TabButton, {BackgroundColor3 = Color3.fromRGB(45, 45, 45)}, 0.2)
+                tweenObject(TabButton, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}, 0.2)
             end
         end)
         
@@ -359,7 +397,7 @@ function Stellar:CreateWindow(config)
                 ButtonCorner.CornerRadius = UDim.new(0, 6)
                 ButtonCorner.Parent = Button
                 
-                -- Анимация кнопки
+                -- Анимация кнопки (без свечения)
                 Button.MouseEnter:Connect(function()
                     tweenObject(Button, {BackgroundColor3 = Color3.fromRGB(20, 100, 255)}, 0.2)
                 end)
@@ -643,7 +681,7 @@ function Stellar:CreateWindow(config)
                             OptionCorner.Parent = OptionButton
                             
                             OptionButton.MouseEnter:Connect(function()
-                                tweenObject(OptionButton, {BackgroundColor3 = Color3.fromRGB(45, 45, 45)}, 0.2)
+                                tweenObject(OptionButton, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}, 0.2)
                             end)
                             
                             OptionButton.MouseLeave:Connect(function()
@@ -671,7 +709,7 @@ function Stellar:CreateWindow(config)
                 
                 -- Анимация кнопки
                 DropdownButton.MouseEnter:Connect(function()
-                    tweenObject(DropdownButton, {BackgroundColor3 = Color3.fromRGB(60, 60, 60)}, 0.2)
+                    tweenObject(DropdownButton, {BackgroundColor3 = Color3.fromRGB(50, 50, 50)}, 0.2)
                 end)
                 
                 DropdownButton.MouseLeave:Connect(function()
@@ -846,6 +884,7 @@ function Stellar:ShowKeySystem()
         local inputKey = InputBox.Text
         for _, validKey in pairs(Stellar.KeySystem.Keys) do
             if inputKey == validKey then
+                -- Сохранение ключа в файл
                 writefile(Stellar.KeySystem.FileName, inputKey)
                 result = true
                 KeyGui:Destroy()
